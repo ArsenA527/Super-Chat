@@ -8,9 +8,9 @@
         Title="Super-chat" Height="500" Width="800">
     <Grid>
         <Label Content="Введите ник:" HorizontalAlignment="Left" Margin="20,60,0,0" VerticalAlignment="Top" FontSize="15"/>
-        <Button x:Name="btnLogin" Content="Вход" HorizontalAlignment="Left" Margin="340,65,0,0" VerticalAlignment="Top" Width="75" FontSize="15"/>
-        <Button x:Name="btnLogout" Content="Выход" HorizontalAlignment="Left" Margin="430,65,0,0" VerticalAlignment="Top" Width="75" FontSize="15"/>
-        <Button x:Name="btnSend" Content="Отправить" HorizontalAlignment="Left" Margin="688,401,0,0" VerticalAlignment="Top" Width="81" FontSize="15" Height="55"/>
+        <Button x:Name="btnLogin" Content="Вход" HorizontalAlignment="Left" Margin="340,65,0,0" VerticalAlignment="Top" Width="75" FontSize="15" Click="BtnLogin_Click"/>
+        <Button x:Name="btnLogout" Content="Выход" HorizontalAlignment="Left" Margin="430,65,0,0" VerticalAlignment="Top" Width="75" FontSize="15" Click="BtnLogout_Click"/>
+        <Button x:Name="btnSend" Content="Отправить" HorizontalAlignment="Left" Margin="688,401,0,0" VerticalAlignment="Top" Width="81" FontSize="15" Height="55" Click="BtnSend_Click"/>
         <ListBox x:Name="lbLog" HorizontalAlignment="Left" Height="251" Margin="20,130,0,0" VerticalAlignment="Top" Width="750" FontSize="15"/>
         <TextBox x:Name="tbNik" HorizontalAlignment="Left" Height="25" Margin="120,65,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="200" FontSize="15"/>
         <TextBox x:Name="tbMessage" HorizontalAlignment="Left" Height="55" Margin="20,400,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="659" FontSize="15"/>
