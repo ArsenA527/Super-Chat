@@ -26,8 +26,8 @@ namespace Super_chat
         UdpClient Client;
         const int localeport = 5500; // порт для приема сообщений
         const int remoteport = 5500; // порт для отправки сообщений
-       // const int TTL = 20;
-        const string IP = "127.0.0.1"; 
+        const int TTL = 20;
+        const string IP = "239.128.128.128"; 
         IPAddress groupAddress; // адрес для групповой рассылки
         string nikName;
 
@@ -61,6 +61,7 @@ namespace Super_chat
             {
                 MessageBox.Show("Ошибка: " + ex.Message);
             }
+ 
         }
 
         private void addMessage(string message)
@@ -77,10 +78,10 @@ namespace Super_chat
         {
             nikName = tbNik.Text;
 
-            try
-            {
+           // try
+           // {
                 Client = new UdpClient(localeport); // UdpClient для получения данных
-                Client.JoinMulticastGroup(groupAddress);
+                Client.JoinMulticastGroup(groupAddress, TTL);
 
                 btnLogin.IsEnabled = false;
                 lbLog.IsEnabled = true;
@@ -96,11 +97,11 @@ namespace Super_chat
                 byte[] buffer = Encoding.UTF8.GetBytes(message);
                 Client.Send(buffer, buffer.Length, IP, remoteport);
 
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Ошибка: " + ex.Message);
-            }
+           // }
+           // catch (Exception ex)
+           // {
+           //     MessageBox.Show("Ошибка: " + ex.Message);
+//}
             
         }
 
@@ -108,7 +109,7 @@ namespace Super_chat
 
         private void BtnLogout_Click(object sender, RoutedEventArgs e)
         {
-            string message = tbNik + " покидает чат";
+            string message = tbNik.Text + " покидает чат";
             byte[] buffer = Encoding.UTF8.GetBytes(message);
             Client.Send(buffer, buffer.Length, IP, remoteport);
             Client.DropMulticastGroup(groupAddress);
@@ -124,7 +125,17 @@ namespace Super_chat
 
         private void BtnSend_Click(object sender, RoutedEventArgs e)
         {
-
+            try
+            {
+                string message = $"{tbNik.Text}: {tbMessage.Text}";
+                byte[] buffer = Encoding.UTF8.GetBytes(message);
+                Client.Send(buffer, buffer.Length, IP, remoteport);
+                tbMessage.Clear();
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Ошибка: " + ex.Message); ;
+            }
         }
     }
 }
