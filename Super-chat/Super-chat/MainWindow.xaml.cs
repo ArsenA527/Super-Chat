@@ -23,13 +23,15 @@ namespace Super_chat
     /// </summary>
     public partial class MainWindow : Window
     {
-        UdpClient Client;
-        const int localeport = 5500; // порт для приема сообщений
-        const int remoteport = 5500; // порт для отправки сообщений
+        bool alive = false; // будет ли работать поток для приема
+        UdpClient client;
+        const int LOCALPORT = 8001; // порт для приема сообщений
+        const int REMOTEPORT = 8001; // порт для отправки сообщений
         const int TTL = 20;
-        const string IP = "239.128.128.128"; 
+        const string HOST = "235.5.5.1"; // хост для групповой рассылки
         IPAddress groupAddress; // адрес для групповой рассылки
-        string nikName;
+
+        string userName; // имя пользователя в чате
 
 
         public MainWindow()
@@ -37,31 +39,40 @@ namespace Super_chat
             InitializeComponent();
 
             btnLogin.IsEnabled = true;
-            lbLog.IsEnabled = false;
-            tbMessage.IsEnabled = false;
+            
             btnSend.IsEnabled = false;
             btnLogout.IsEnabled = false;
 
-            groupAddress = IPAddress.Parse(IP);
+            groupAddress = IPAddress.Parse(HOST);
         }
 
         // метод приема сообщений
         private void RecMessage()
         {
-             
-            IPEndPoint remoteIp = null; // адрес входящего подключения
+            alive = true;
             try
             {
-                
-                byte[] buffer = Client.Receive(ref remoteIp);
-                string message = Encoding.UTF8.GetString(buffer);
-                lbLog.Dispatcher.BeginInvoke(new Action(() => addMessage("Собеседник: " + message)));
+                while (alive)
+                {
+                    IPEndPoint remoteIp = null;
+                    byte[] data = client.Receive(ref remoteIp);
+                    string message = Encoding.UTF8.GetString(data);
+
+                    // добавляем полученное сообщение в текстовое поле
+                    lbLog.Dispatcher.BeginInvoke(new Action(() => addMessage("Собеседник: " + message)));
+                }
             }
-            catch(Exception ex)
+            catch (ObjectDisposedException)
             {
-                MessageBox.Show("Ошибка: " + ex.Message);
+                if (!alive)
+                    return;
+                throw;
             }
- 
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
         }
 
         private void addMessage(string message)
@@ -76,65 +87,73 @@ namespace Super_chat
 
         private void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
-            nikName = tbNik.Text;
+            userName = tbNik.Text;
+           
 
-           // try
-           // {
-                Client = new UdpClient(localeport); // UdpClient для получения данных
-                Client.JoinMulticastGroup(groupAddress, TTL);
+            try
+            {
+                client = new UdpClient(LOCALPORT);
+                // присоединяемся к групповой рассылке
+                client.JoinMulticastGroup(groupAddress, TTL);
+
+                // запускаем задачу на прием сообщений
+                Task receiveTask = new Task(RecMessage);
+                receiveTask.Start();
+
+                // отправляем первое сообщение о входе нового пользователя
+                string message = userName + " вошел в чат";
+                byte[] data = Encoding.UTF8.GetBytes(message);
+                client.Send(data, data.Length, HOST, REMOTEPORT);
 
                 btnLogin.IsEnabled = false;
-                lbLog.IsEnabled = true;
-                tbMessage.IsEnabled = true;
-                btnSend.IsEnabled = true;
                 btnLogout.IsEnabled = true;
+                btnSend.IsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
 
-                 Thread th = new Thread(RecMessage);
-                 th.Start();
-
-
-                string message = nikName + " вошел в чат";
-                byte[] buffer = Encoding.UTF8.GetBytes(message);
-                Client.Send(buffer, buffer.Length, IP, remoteport);
-
-           // }
-           // catch (Exception ex)
-           // {
-           //     MessageBox.Show("Ошибка: " + ex.Message);
-//}
-            
         }
 
-        
+        private void ExitChat()
+        {
+            string message = userName + " покидает чат";
+            byte[] data = Encoding.UTF8.GetBytes(message);
+            client.Send(data, data.Length, HOST, REMOTEPORT);
+            client.DropMulticastGroup(groupAddress);
+
+            alive = false;
+            client.Close();
+
+            btnLogin.IsEnabled = true;
+            btnLogout.IsEnabled = false;
+            btnSend.IsEnabled = false;
+        }
+
 
         private void BtnLogout_Click(object sender, RoutedEventArgs e)
         {
-            string message = tbNik.Text + " покидает чат";
-            byte[] buffer = Encoding.UTF8.GetBytes(message);
-            Client.Send(buffer, buffer.Length, IP, remoteport);
-            Client.DropMulticastGroup(groupAddress);
-
-            Client.Close();
-
-            btnLogin.IsEnabled = true;
-            lbLog.IsEnabled = false;
-            tbMessage.IsEnabled = false;
-            btnSend.IsEnabled = false;
-            btnLogout.IsEnabled = false;
+            ExitChat();
         }
 
         private void BtnSend_Click(object sender, RoutedEventArgs e)
         {
+            UdpClient otherClient = new UdpClient(); // создаем UdpClient для отправки сообщений
             try
             {
                 string message = $"{tbNik.Text}: {tbMessage.Text}";
                 byte[] buffer = Encoding.UTF8.GetBytes(message);
-                Client.Send(buffer, buffer.Length, IP, remoteport);
+                otherClient.Send(buffer, buffer.Length, HOST, REMOTEPORT);
                 tbMessage.Clear();
             }
             catch(Exception ex)
             {
                 MessageBox.Show("Ошибка: " + ex.Message); ;
+            }
+            finally
+            {
+                otherClient.Close();
             }
         }
     }
